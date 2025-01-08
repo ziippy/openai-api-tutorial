@@ -1,6 +1,6 @@
 ##### 기본 정보 입력 ####
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(dotenv_path="../.env")
 
 # Streamlit 패키지 추가
 import streamlit as st
