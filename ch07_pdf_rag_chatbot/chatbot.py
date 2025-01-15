@@ -7,7 +7,8 @@ from langchain.prompts import PromptTemplate
 # from langchain.vectorstores import Chroma
 from langchain_community.vectorstores import Chroma
 # from langchain.embeddings import OpenAIEmbeddings
-from langchain_community.embeddings import OpenAIEmbeddings
+# from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.chains import RetrievalQA
 # from langchain.document_loaders import PyPDFLoader
 from langchain_community.document_loaders import PyPDFLoader
@@ -17,6 +18,10 @@ import gradio as gr
 # pdf 를 vector db 에
 loader = PyPDFLoader("./2020_경제금융용어 700선_게시.pdf")
 texts = loader.load_and_split()
+
+# 불필요한 청크 제거
+texts = texts[13:]
+texts = texts[:-1]
 
 embedding = OpenAIEmbeddings()
 
@@ -53,7 +58,7 @@ def get_chatbot_response(input_text):
 
 # 인터페이스를 생성.
 with gr.Blocks() as demo:
-    chatbot = gr.Chatbot(label="경제금융용어 챗봇") # 경제금융용어 챗봇 레이블을 좌측 상단에 구성
+    chatbot = gr.Chatbot(label="경제금융용어 챗봇", type='messages') # 경제금융용어 챗봇 레이블을 좌측 상단에 구성
     msg = gr.Textbox(label="질문해주세요!")  # 하단의 채팅창의 레이블
     clear = gr.Button("대화 초기화")  # 대화 초기화 버튼
 
