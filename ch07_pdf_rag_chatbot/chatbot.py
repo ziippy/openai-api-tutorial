@@ -5,7 +5,8 @@ import os
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 # from langchain.vectorstores import Chroma
-from langchain_community.vectorstores import Chroma
+# from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 # from langchain.embeddings import OpenAIEmbeddings
 # from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_openai import OpenAIEmbeddings
@@ -15,19 +16,28 @@ from langchain_community.document_loaders import PyPDFLoader
 import urllib.request
 import gradio as gr
 
-# pdf 를 vector db 에
-loader = PyPDFLoader("./2020_경제금융용어 700선_게시.pdf")
-texts = loader.load_and_split()
-
-# 불필요한 청크 제거
-texts = texts[13:]
-texts = texts[:-1]
-
 embedding = OpenAIEmbeddings()
 
-vectordb = Chroma.from_documents(
-    documents=texts,
-    embedding=embedding)
+vectordb_path = './chroma_db'
+
+if os.path.isdir(vectordb_path):
+    print('load from vector db')
+    vectordb = Chroma(persist_directory=vectordb_path,
+                embedding_function=OpenAIEmbeddings())
+else:
+    print('load from pdf file')
+    # pdf 를 vector db 에
+    loader = PyPDFLoader("./2020_경제금융용어 700선_게시.pdf")
+    texts = loader.load_and_split()
+
+    # 불필요한 청크 제거
+    texts = texts[13:]
+    texts = texts[:-1]
+
+    vectordb = Chroma.from_documents(
+        documents=texts,
+        embedding=embedding,
+        persist_directory = './chroma_db')
 
 llm = ChatOpenAI(model_name="gpt-4o", temperature=0)
 
@@ -64,11 +74,20 @@ with gr.Blocks() as demo:
 
     # 챗봇의 답변을 처리하는 함수
     def respond(message, chat_history):
-      bot_message = get_chatbot_response(message)
+        # 사용자 메시지 추가
+        chat_history.append({"role": "user", "content": message})
 
-      # 채팅 기록에 사용자의 메시지와 봇의 응답을 추가.
-      chat_history.append((message, bot_message))
-      return "", chat_history
+        # 챗봇 응답 생성
+        bot_message = get_chatbot_response(message)
+        chat_history.append({"role": "assistant", "content": bot_message})
+
+        return "", chat_history
+
+    #   bot_message = get_chatbot_response(message)
+
+    #   # 채팅 기록에 사용자의 메시지와 봇의 응답을 추가.
+    #   chat_history.append((message, bot_message))
+    #   return "", chat_history
 
     # 사용자의 입력을 제출(submit)하면 respond 함수가 호출.
     msg.submit(respond, [msg, chatbot], [msg, chatbot])
